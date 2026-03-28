@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Politique française</title>
+
+  <style>
+    body {
+      font-family: Arial;
+      background: #f1f5f9;
+      margin: 0;
+    }
+
+    header {
+      background: white;
+      padding: 20px;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .container {
+      padding: 20px;
+    }
+
+    .card {
+      background: white;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 10px;
+    }
+
+    .btn {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 8px;
+      background: #3b82f6;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  🇫🇷 Politique française
+</header>
+
+<div class="container" id="articles">
+</div>
+
+<a href="index.html" class="btn">Retour</a>
+
+<script>
+async function loadArticles() {
+
+  const url = "https://newsapi.org/v2/everything?q=politique+France&language=fr&sortBy=publishedAt&apiKey=ce84ce31b1f24f61b0f67eeb299aa2c9";
+
+  const response = await fetch(url);
+  const data = await response.json();
+
+  const container = document.getElementById("articles");
+
+  data.articles.forEach(article => {
+    const div = document.createElement("div");
+    div.className = "card";
+
+    div.innerHTML = `
+      <h3>${article.title}</h3>
+      <p>${article.description || ""}</p>
+      <a href="${article.url}" target="_blank" class="btn">Lire</a>
+    `;
+
+    container.appendChild(div);
+  });
+}
+
+loadArticles();
+</script>
+
+</body>
+</html>
