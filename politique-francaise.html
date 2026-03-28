@@ -55,7 +55,7 @@
 <script>
 async function loadArticles() {
 
-  const url = "https://newsapi.org/v2/everything?q=politique+France&language=fr&sortBy=publishedAt&apiKey=ce84ce31b1f24f61b0f67eeb299aa2c9";
+  const url = "https://gnews.io/api/v4/search?q=politique France&lang=fr&token=a21a4bca71890fb47daad13c144db0d4";
 
   const response = await fetch(url);
   const data = await response.json();
@@ -78,6 +78,3 @@ async function loadArticles() {
 
 loadArticles();
 </script>
-
-</body>
-</html>
