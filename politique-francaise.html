@@ -53,5 +53,44 @@
 <a href="index.html" class="btn">Retour</a>
 
 <script>
-document.getElementById("articles").innerHTML = "<h2>TEST OK</h2>";
+async function loadArticles() {
+
+  const url = "https://api.allorigins.win/raw?url=https://www.franceinfo.fr/rss";
+
+  try {
+    const response = await fetch(url);
+    const text = await response.text();
+
+    const parser = new DOMParser();
+    const xml = parser.parseFromString(text, "text/xml");
+
+    const items = xml.querySelectorAll("item");
+
+    const container = document.getElementById("articles");
+
+    container.innerHTML = "";
+
+    items.forEach((item, index) => {
+      if (index > 10) return; // limite à 10 articles
+
+      const title = item.querySelector("title").textContent;
+      const link = item.querySelector("link").textContent;
+
+      const div = document.createElement("div");
+      div.className = "card";
+
+      div.innerHTML = `
+        <h3>${title}</h3>
+        <a href="${link}" target="_blank" class="btn">Lire</a>
+      `;
+
+      container.appendChild(div);
+    });
+
+  } catch (error) {
+    console.error("Erreur :", error);
+  }
+}
+
+loadArticles();
 </script>
