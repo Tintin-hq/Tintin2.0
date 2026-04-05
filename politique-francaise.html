@@ -24,8 +24,8 @@
       padding: 15px;
       background: white;
       border-bottom: 1px solid #e2e8f0;
-      flex-wrap: wrap;
       display: flex;
+      flex-wrap: wrap;
       justify-content: center;
       gap: 8px;
     }
@@ -54,10 +54,28 @@
 
     .card {
       background: white;
-      padding: 15px;
-      margin-bottom: 15px;
       border-radius: 10px;
+      margin-bottom: 15px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+
+    .card-image {
+      width: 100%;
+      max-height: 200px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .card-body {
+      padding: 15px;
+    }
+
+    .card-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
     }
 
     .source-badge {
@@ -65,7 +83,16 @@
       font-weight: bold;
       color: #64748b;
       text-transform: uppercase;
-      margin-bottom: 6px;
+    }
+
+    .badge-payant {
+      font-size: 11px;
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fcd34d;
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-weight: bold;
     }
 
     .card h3 {
@@ -128,52 +155,87 @@
 <a href="index.html" class="btn retour">← Retour</a>
 
 <script>
-// ============================
-// LISTE DES SOURCES RSS
-// ============================
 const SOURCES = [
-  {
-    nom: "France Info",
-    url: "https://www.francetvinfo.fr/politique.rss"
-  },
-  {
-    nom: "BFM TV",
-    url: "https://www.bfmtv.com/rss/politique/"
-  },
-  {
-    nom: "RTL",
-    url: "https://www.rtl.fr/rss/actu/infos.xml"
-  },
-  {
-    nom: "LCI / TF1",
-    url: "https://www.tf1info.fr/rss/infos.xml"
-  },
-  {
-    nom: "Le Parisien",
-    url: "https://feeds.leparisien.fr/leparisien/rss/politique"
-  },
-  {
-    nom: "Ouest France",
-    url: "https://www.ouest-france.fr/rss/politique"
-  },
-  {
-    nom: "20 Minutes",
-    url: "https://www.20minutes.fr/feeds/rss/actu/politique.xml"
-  },
-  {
-    nom: "AFP",
-    url: "https://www.afp.com/fr/actus/afp_actualite/792,31,9,7,33/feed"
-  }
+  { nom: "France Info",  gratuit: true,  url: "https://www.francetvinfo.fr/politique.rss" },
+  { nom: "BFM TV",       gratuit: true,  url: "https://www.bfmtv.com/rss/politique/" },
+  { nom: "AFP",          gratuit: true,  url: "https://www.afp.com/fr/actus/afp_actualite/792,31,9,7,33/feed" },
+  { nom: "France Inter", gratuit: true,  url: "https://www.franceinter.fr/rss/politique.xml" },
+  { nom: "France 24",    gratuit: true,  url: "https://www.france24.com/fr/france/rss" },
+  { nom: "RFI",          gratuit: true,  url: "https://www.rfi.fr/fr/podcasts/politique-française/rss" },
+  { nom: "Public Sénat", gratuit: true,  url: "https://www.publicsenat.fr/rss/actualites.rss" },
+  { nom: "HuffPost",     gratuit: true,  url: "https://www.huffingtonpost.fr/feeds/index.xml" },
+  { nom: "La Dépêche",   gratuit: true,  url: "https://www.ladepeche.fr/politique/rss.xml" },
+  { nom: "Le Parisien",  gratuit: true,  url: "https://feeds.leparisien.fr/leparisien/rss" },
+  { nom: "Ouest-France", gratuit: true,  url: "https://www.ouest-france.fr/rss-en-continu.xml" },
+  { nom: "20 Minutes",   gratuit: true,  url: "https://www.20minutes.fr/feeds/rss-une.xml" },
+  { nom: "Le Figaro",    gratuit: false, url: "https://www.lefigaro.fr/rss/figaro_politique.xml" },
+  { nom: "Libération",   gratuit: false, url: "https://www.liberation.fr/arc/outboundfeeds/rss-all/category/politique/?outputType=xml" },
 ];
 
 const PROXY = "https://api.rss2json.com/v1/api.json?rss_url=";
 
-let tousLesArticles = [];
-let sourceActive = "Toutes";
+const MOTS_CLES = [
+  "gouvernement","assemblée","sénat","macron","premier ministre",
+  "député","ministre","élection","parlement","politique","loi",
+  "parti","présidentielle","gauche","droite","vote","réforme",
+  "mélenchon","le pen","bardella","weil","barnier","bayrou",
+  "lfi","rn","ps","lr","renaissance","nfp","front populaire"
+];
 
-// ============================
-// CHARGEMENT DE TOUTES LES SOURCES
-// ============================
+const SOURCES_SANS_FLUX_DEDIE = ["Ouest-France", "20 Minutes", "Le Parisien", "HuffPost", "La Dépêche", "France 24"];
+
+// Mots-clés qui signalent un article payant dans le titre ou la description
+// (Le Figaro et Libération les incluent souvent dans leur flux RSS)
+const MOTS_PAYANTS = [
+  "réservé aux abonnés", "abonnés", "premium", "exclusif",
+  "accès restreint", "payant", "subscriber"
+];
+
+function estPolitique(titre) {
+  return MOTS_CLES.some(mot => titre.toLowerCase().includes(mot));
+}
+
+function estPayant(item) {
+  // Vérifie dans le titre, la description et les catégories RSS
+  const texte = [
+    item.title || "",
+    item.description || "",
+    (item.categories || []).join(" ")
+  ].join(" ").toLowerCase();
+
+  return MOTS_PAYANTS.some(mot => texte.includes(mot));
+}
+
+// Extrait l'image depuis le flux RSS (plusieurs emplacements possibles)
+function extraireImage(item) {
+  // 1. Champ "thumbnail" (rss2json)
+  if (item.thumbnail && item.thumbnail.startsWith("http")) return item.thumbnail;
+
+  // 2. Champ "enclosure" (podcast/media RSS)
+  if (item.enclosure && item.enclosure.link && item.enclosure.type &&
+      item.enclosure.type.startsWith("image")) return item.enclosure.link;
+
+  // 3. Balise <media:content> dans le contenu brut
+  if (item.content) {
+    const mediaMatch = item.content.match(/url="(https?:\/\/[^"]+\.(jpg|jpeg|png|webp)[^"]*)"/i);
+    if (mediaMatch) return mediaMatch[1];
+
+    // 4. Première balise <img> dans le contenu HTML
+    const imgMatch = item.content.match(/<img[^>]+src="(https?:\/\/[^"]+)"/i);
+    if (imgMatch) return imgMatch[1];
+  }
+
+  // 5. Première image dans la description
+  if (item.description) {
+    const imgMatch = item.description.match(/<img[^>]+src="(https?:\/\/[^"]+)"/i);
+    if (imgMatch) return imgMatch[1];
+  }
+
+  return null;
+}
+
+let tousLesArticles = [];
+
 async function chargerSource(source) {
   try {
     const response = await fetch(PROXY + encodeURIComponent(source.url));
@@ -181,10 +243,20 @@ async function chargerSource(source) {
     const data = await response.json();
     if (!data.items || data.items.length === 0) return [];
 
-    return data.items.slice(0, 8).map(item => ({
+    let items = data.items;
+
+    if (SOURCES_SANS_FLUX_DEDIE.includes(source.nom)) {
+      items = items.filter(item => estPolitique(item.title || ""));
+    }
+
+    return items.slice(0, 8).map(item => ({
       source: source.nom,
+      gratuit: source.gratuit,
+      // Pour Figaro et Libération, on détecte si l'article est payant
+      payant: !source.gratuit ? estPayant(item) : false,
       title: item.title || "Sans titre",
       link: item.link || "#",
+      image: extraireImage(item),
       summary: item.description
         ? item.description.replace(/<[^>]+>/g, "").slice(0, 160) + "..."
         : ""
@@ -196,12 +268,9 @@ async function chargerSource(source) {
 }
 
 async function loadArticles() {
-  const container = document.getElementById("articles");
   const message = document.getElementById("message");
 
-  // Charge toutes les sources en parallèle
   const resultats = await Promise.all(SOURCES.map(s => chargerSource(s)));
-
   tousLesArticles = resultats.flat();
 
   if (tousLesArticles.length === 0) {
@@ -209,37 +278,27 @@ async function loadArticles() {
     return;
   }
 
-  // Crée les boutons de filtre
   creerFiltres();
-
-  // Affiche tous les articles
   afficherArticles("Toutes");
 }
 
-// ============================
-// FILTRES PAR SOURCE
-// ============================
 function creerFiltres() {
   const conteneurFiltres = document.getElementById("filtres");
-  const sources = ["Toutes", ...SOURCES.map(s => s.nom)];
+  const sourcesPresentes = ["Toutes", ...new Set(tousLesArticles.map(a => a.source))];
 
-  sources.forEach(nom => {
+  sourcesPresentes.forEach(nom => {
     const btn = document.createElement("button");
     btn.className = "filtre-btn" + (nom === "Toutes" ? " actif" : "");
     btn.textContent = nom;
     btn.onclick = () => {
       document.querySelectorAll(".filtre-btn").forEach(b => b.classList.remove("actif"));
       btn.classList.add("actif");
-      sourceActive = nom;
       afficherArticles(nom);
     };
     conteneurFiltres.appendChild(btn);
   });
 }
 
-// ============================
-// AFFICHAGE DES ARTICLES
-// ============================
 function afficherArticles(filtre) {
   const container = document.getElementById("articles");
   const compteur = document.getElementById("compteur");
@@ -260,12 +319,28 @@ function afficherArticles(filtre) {
   articles.forEach(article => {
     const div = document.createElement("div");
     div.className = "card";
+
+    const badgePayant = article.payant
+      ? `<span class="badge-payant">🔒 Abonnés</span>`
+      : "";
+
+    const imageHtml = article.image
+      ? `<img class="card-image" src="${article.image}" alt="" loading="lazy" onerror="this.style.display='none'">`
+      : "";
+
     div.innerHTML = `
-      <div class="source-badge">📰 ${article.source}</div>
-      <h3>${article.title}</h3>
-      ${article.summary ? `<p>${article.summary}</p>` : ""}
-      <a href="${article.link}" target="_blank" class="btn">Lire l'article</a>
+      ${imageHtml}
+      <div class="card-body">
+        <div class="card-meta">
+          <span class="source-badge">📰 ${article.source}</span>
+          ${badgePayant}
+        </div>
+        <h3>${article.title}</h3>
+        ${article.summary ? `<p>${article.summary}</p>` : ""}
+        <a href="${article.link}" target="_blank" class="btn">Lire l'article</a>
+      </div>
     `;
+
     container.appendChild(div);
   });
 }
