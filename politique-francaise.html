@@ -19,8 +19,37 @@
       font-size: 20px;
     }
 
+    .filtres {
+      text-align: center;
+      padding: 15px;
+      background: white;
+      border-bottom: 1px solid #e2e8f0;
+      flex-wrap: wrap;
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .filtre-btn {
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 2px solid #3b82f6;
+      background: white;
+      color: #3b82f6;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .filtre-btn.actif {
+      background: #3b82f6;
+      color: white;
+    }
+
     .container {
       padding: 20px;
+      max-width: 700px;
+      margin: auto;
     }
 
     .card {
@@ -31,26 +60,35 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.08);
     }
 
+    .source-badge {
+      font-size: 11px;
+      font-weight: bold;
+      color: #64748b;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
     .card h3 {
       margin: 0 0 8px 0;
-      font-size: 16px;
+      font-size: 15px;
+      line-height: 1.4;
     }
 
     .card p {
-      font-size: 14px;
+      font-size: 13px;
       color: #555;
       margin: 0 0 10px 0;
+      line-height: 1.5;
     }
 
     .btn {
       display: inline-block;
-      margin-top: 10px;
-      padding: 8px 14px;
+      padding: 7px 14px;
       background: #3b82f6;
       color: white;
       text-decoration: none;
       border-radius: 8px;
-      font-size: 14px;
+      font-size: 13px;
     }
 
     .retour {
@@ -64,71 +102,172 @@
       color: #888;
       padding: 30px;
     }
+
+    .compteur {
+      text-align: center;
+      color: #94a3b8;
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
   </style>
 </head>
 
 <body>
 
-<header>
-  🇫🇷 Politique française
-</header>
+<header>🇫🇷 Politique française</header>
 
-<div class="container" id="articles">
-  <p id="message">⏳ Chargement des articles...</p>
+<div class="filtres" id="filtres"></div>
+
+<div class="container">
+  <div class="compteur" id="compteur"></div>
+  <div id="articles">
+    <p id="message">⏳ Chargement des articles...</p>
+  </div>
 </div>
 
 <a href="index.html" class="btn retour">← Retour</a>
 
 <script>
+// ============================
+// LISTE DES SOURCES RSS
+// ============================
+const SOURCES = [
+  {
+    nom: "France Info",
+    url: "https://www.francetvinfo.fr/politique.rss"
+  },
+  {
+    nom: "BFM TV",
+    url: "https://www.bfmtv.com/rss/politique/"
+  },
+  {
+    nom: "RTL",
+    url: "https://www.rtl.fr/rss/actu/infos.xml"
+  },
+  {
+    nom: "LCI / TF1",
+    url: "https://www.tf1info.fr/rss/infos.xml"
+  },
+  {
+    nom: "Le Parisien",
+    url: "https://feeds.leparisien.fr/leparisien/rss/politique"
+  },
+  {
+    nom: "Ouest France",
+    url: "https://www.ouest-france.fr/rss/politique"
+  },
+  {
+    nom: "20 Minutes",
+    url: "https://www.20minutes.fr/feeds/rss/actu/politique.xml"
+  },
+  {
+    nom: "AFP",
+    url: "https://www.afp.com/fr/actus/afp_actualite/792,31,9,7,33/feed"
+  }
+];
+
+const PROXY = "https://api.rss2json.com/v1/api.json?rss_url=";
+
+let tousLesArticles = [];
+let sourceActive = "Toutes";
+
+// ============================
+// CHARGEMENT DE TOUTES LES SOURCES
+// ============================
+async function chargerSource(source) {
+  try {
+    const response = await fetch(PROXY + encodeURIComponent(source.url));
+    if (!response.ok) return [];
+    const data = await response.json();
+    if (!data.items || data.items.length === 0) return [];
+
+    return data.items.slice(0, 8).map(item => ({
+      source: source.nom,
+      title: item.title || "Sans titre",
+      link: item.link || "#",
+      summary: item.description
+        ? item.description.replace(/<[^>]+>/g, "").slice(0, 160) + "..."
+        : ""
+    }));
+  } catch (e) {
+    console.warn(`Erreur pour ${source.nom}:`, e);
+    return [];
+  }
+}
+
 async function loadArticles() {
-
-  const rssUrl = "https://www.francetvinfo.fr/politique.rss";
-  const proxyUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
-
   const container = document.getElementById("articles");
   const message = document.getElementById("message");
 
-  try {
-    const response = await fetch(proxyUrl);
+  // Charge toutes les sources en parallèle
+  const resultats = await Promise.all(SOURCES.map(s => chargerSource(s)));
 
-    if (!response.ok) {
-      message.textContent = "❌ Impossible de charger les articles. Réessaie plus tard.";
-      return;
-    }
+  tousLesArticles = resultats.flat();
 
-    const data = await response.json();
-    const items = data.items;
-
-    if (!items || items.length === 0) {
-      message.textContent = "Aucun article trouvé.";
-      return;
-    }
-
-    container.innerHTML = "";
-
-    items.slice(0, 10).forEach(item => {
-      const title = item.title || "Sans titre";
-      const link = item.link || "#";
-      const summary = item.description
-        ? item.description.replace(/<[^>]+>/g, "").slice(0, 150) + "..."
-        : "";
-
-      const div = document.createElement("div");
-      div.className = "card";
-
-      div.innerHTML = `
-        <h3>${title}</h3>
-        ${summary ? `<p>${summary}</p>` : ""}
-        <a href="${link}" target="_blank" class="btn">Lire l'article</a>
-      `;
-
-      container.appendChild(div);
-    });
-
-  } catch (error) {
-    message.textContent = "❌ Erreur de chargement. Réessaie plus tard.";
-    console.error("Erreur :", error);
+  if (tousLesArticles.length === 0) {
+    message.textContent = "❌ Impossible de charger les articles. Réessaie plus tard.";
+    return;
   }
+
+  // Crée les boutons de filtre
+  creerFiltres();
+
+  // Affiche tous les articles
+  afficherArticles("Toutes");
+}
+
+// ============================
+// FILTRES PAR SOURCE
+// ============================
+function creerFiltres() {
+  const conteneurFiltres = document.getElementById("filtres");
+  const sources = ["Toutes", ...SOURCES.map(s => s.nom)];
+
+  sources.forEach(nom => {
+    const btn = document.createElement("button");
+    btn.className = "filtre-btn" + (nom === "Toutes" ? " actif" : "");
+    btn.textContent = nom;
+    btn.onclick = () => {
+      document.querySelectorAll(".filtre-btn").forEach(b => b.classList.remove("actif"));
+      btn.classList.add("actif");
+      sourceActive = nom;
+      afficherArticles(nom);
+    };
+    conteneurFiltres.appendChild(btn);
+  });
+}
+
+// ============================
+// AFFICHAGE DES ARTICLES
+// ============================
+function afficherArticles(filtre) {
+  const container = document.getElementById("articles");
+  const compteur = document.getElementById("compteur");
+
+  const articles = filtre === "Toutes"
+    ? tousLesArticles
+    : tousLesArticles.filter(a => a.source === filtre);
+
+  if (articles.length === 0) {
+    container.innerHTML = `<p id="message">Aucun article trouvé pour cette source.</p>`;
+    compteur.textContent = "";
+    return;
+  }
+
+  compteur.textContent = `${articles.length} article${articles.length > 1 ? "s" : ""}`;
+  container.innerHTML = "";
+
+  articles.forEach(article => {
+    const div = document.createElement("div");
+    div.className = "card";
+    div.innerHTML = `
+      <div class="source-badge">📰 ${article.source}</div>
+      <h3>${article.title}</h3>
+      ${article.summary ? `<p>${article.summary}</p>` : ""}
+      <a href="${article.link}" target="_blank" class="btn">Lire l'article</a>
+    `;
+    container.appendChild(div);
+  });
 }
 
 loadArticles();
