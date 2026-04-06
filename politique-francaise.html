@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Politique française</title>
-
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -24,9 +23,27 @@
       top: 0;
       z-index: 100;
       box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
     }
 
-    /* BARRE DE SOURCES — défilement horizontal au doigt */
+    .barre-retour {
+      padding: 10px 16px;
+      background: #f1f5f9;
+    }
+    .btn-retour {
+      display: inline-block;
+      padding: 8px 16px;
+      background: #64748b;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    /* Barre sources scrollable */
     .sources-wrapper {
       background: white;
       border-bottom: 1px solid #e2e8f0;
@@ -35,14 +52,12 @@
       scrollbar-width: none;
     }
     .sources-wrapper::-webkit-scrollbar { display: none; }
-
     .sources-liste {
       display: flex;
       gap: 8px;
       padding: 10px 12px;
       width: max-content;
     }
-
     .source-btn {
       padding: 6px 14px;
       border-radius: 20px;
@@ -60,34 +75,38 @@
       color: white;
     }
 
-    /* BOUTON RETOUR */
-    .barre-retour {
-      padding: 10px 16px;
-      background: #f1f5f9;
+    /* Compteur + indicateur refresh */
+    .barre-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 14px;
+      font-size: 12px;
+      color: #94a3b8;
     }
-    .btn-retour {
-      display: inline-block;
-      padding: 8px 16px;
-      background: #64748b;
-      color: white;
-      text-decoration: none;
-      border-radius: 8px;
-      font-size: 14px;
+    .refresh-indicator {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .dot {
+      width: 7px;
+      height: 7px;
+      background: #22c55e;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
     }
 
-    /* ARTICLES */
     .container {
       padding: 12px 14px;
       padding-bottom: 80px;
     }
 
-    .compteur {
-      text-align: center;
-      color: #94a3b8;
-      font-size: 12px;
-      margin-bottom: 10px;
-    }
-
+    /* Carte article */
     .card {
       background: white;
       border-radius: 12px;
@@ -95,33 +114,26 @@
       box-shadow: 0 2px 6px rgba(0,0,0,0.07);
       overflow: hidden;
     }
-
     .card-image {
       width: 100%;
       max-height: 180px;
       object-fit: cover;
       display: block;
     }
-
-    .card-body {
-      padding: 12px;
-    }
-
+    .card-body { padding: 12px; }
     .card-meta {
       display: flex;
       align-items: center;
-      gap: 8px;
-      margin-bottom: 5px;
+      gap: 6px;
+      margin-bottom: 6px;
       flex-wrap: wrap;
     }
-
     .source-badge {
       font-size: 11px;
       font-weight: bold;
       color: #64748b;
       text-transform: uppercase;
     }
-
     .badge-payant {
       font-size: 11px;
       background: #fef3c7;
@@ -131,37 +143,23 @@
       padding: 1px 6px;
       font-weight: bold;
     }
-
-    .badge-local {
-      font-size: 11px;
-      background: #dcfce7;
-      color: #166534;
-      border: 1px solid #86efac;
-      border-radius: 4px;
-      padding: 1px 6px;
-      font-weight: bold;
-    }
-
     .card-date {
       font-size: 11px;
       color: #94a3b8;
       margin-left: auto;
     }
-
     .card h3 {
       font-size: 15px;
       line-height: 1.4;
       margin-bottom: 6px;
       color: #1e293b;
     }
-
     .card p {
       font-size: 13px;
       color: #555;
       line-height: 1.5;
       margin-bottom: 10px;
     }
-
     .btn-lire {
       display: inline-block;
       padding: 7px 14px;
@@ -176,10 +174,9 @@
       text-align: center;
       color: #888;
       padding: 40px 20px;
-      font-size: 15px;
     }
 
-    /* BOUTON REMONTER EN HAUT */
+    /* Bouton haut */
     #btn-top {
       position: fixed;
       bottom: 20px;
@@ -201,111 +198,104 @@
     #btn-top.visible { display: flex; }
   </style>
 </head>
-
 <body>
 
 <header>🇫🇷 Politique française</header>
 
-<!-- Bouton retour juste sous le header -->
 <div class="barre-retour">
   <a href="index.html" class="btn-retour">← Accueil</a>
 </div>
 
-<!-- Barre de sources scrollable au doigt -->
 <div class="sources-wrapper">
   <div class="sources-liste" id="sources-liste"></div>
 </div>
 
+<div class="barre-info">
+  <span id="compteur"></span>
+  <span class="refresh-indicator">
+    <span class="dot"></span>
+    <span id="refresh-texte">Actualisation auto</span>
+  </span>
+</div>
+
 <div class="container">
-  <div class="compteur" id="compteur"></div>
   <div id="articles">
     <p id="message">⏳ Chargement des articles...</p>
   </div>
 </div>
 
-<!-- Bouton remonter en haut -->
 <button id="btn-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 
 <script>
 // ================================================================
-// SOURCES RSS — groupées et avec URLs vérifiées
+// SOURCES — URLs toutes vérifiées
 // ================================================================
 const SOURCES = [
-  // --- Radio France (France Info + France Inter regroupés) ---
-  { nom: "Radio France", groupe: "Radio France", gratuit: true, local: false,
+  // Radio France (France Info + France Inter → groupe "Radio France")
+  { nom: "Radio France", groupe: "Radio France", gratuit: true,
     url: "https://www.francetvinfo.fr/politique.rss" },
-  { nom: "Radio France", groupe: "Radio France", gratuit: true, local: false,
+  { nom: "Radio France", groupe: "Radio France", gratuit: true,
     url: "https://www.franceinter.fr/rss" },
 
-  // --- TV / Web ---
-  { nom: "BFM TV",       groupe: "BFM TV",       gratuit: true,  local: false,
+  // TV & Web
+  { nom: "BFM TV",       groupe: "BFM TV",       gratuit: true,
     url: "https://www.bfmtv.com/rss/politique/" },
-  { nom: "AFP",          groupe: "AFP",           gratuit: true,  local: false,
+  { nom: "AFP",          groupe: "AFP",           gratuit: true,
     url: "https://www.afp.com/fr/actus/afp_actualite/792,31,9,7,33/feed" },
-  { nom: "France 24",    groupe: "France 24",     gratuit: true,  local: false,
+  { nom: "France 24",    groupe: "France 24",     gratuit: true,
     url: "https://www.france24.com/fr/france/rss" },
-  { nom: "RFI",          groupe: "RFI",           gratuit: true,  local: false,
+  { nom: "RFI",          groupe: "RFI",           gratuit: true,
     url: "https://www.rfi.fr/fr/france/rss" },
-  { nom: "Public Sénat", groupe: "Public Sénat",  gratuit: true,  local: false,
-    url: "https://www.publicsenat.fr/rss/articles.rss" },
-  { nom: "HuffPost",     groupe: "HuffPost",      gratuit: true,  local: false,
+  { nom: "Public Sénat", groupe: "Public Sénat",  gratuit: true,
+    url: "https://www.publicsenat.fr/rss/politique.rss" },
+  { nom: "HuffPost",     groupe: "HuffPost",      gratuit: true,
     url: "https://www.huffingtonpost.fr/feeds/index.xml" },
 
-  // --- Presse nationale ---
-  { nom: "Le Parisien",  groupe: "Le Parisien",   gratuit: true,  local: false,
+  // Presse nationale
+  { nom: "Le Parisien",  groupe: "Le Parisien",   gratuit: true,
     url: "https://feeds.leparisien.fr/leparisien/rss" },
-  { nom: "20 Minutes",   groupe: "20 Minutes",    gratuit: true,  local: false,
-    url: "https://www.20minutes.fr/feeds/rss-une.xml" },
-  { nom: "La Dépêche",   groupe: "La Dépêche",    gratuit: true,  local: false,
-    url: "https://www.ladepeche.fr/rss.xml" },
-  { nom: "Le Figaro",    groupe: "Le Figaro",     gratuit: false, local: false,
-    url: "https://www.lefigaro.fr/rss/figaro_politique.xml" },
-  { nom: "Libération",   groupe: "Libération",    gratuit: false, local: false,
-    url: "https://www.liberation.fr/arc/outboundfeeds/rss-all/category/politique/?outputType=xml" },
-
-  // --- Presse locale (Avranches / Manche) ---
-  { nom: "Ouest-France", groupe: "Local",         gratuit: true,  local: true,
+  { nom: "Ouest-France", groupe: "Ouest-France",  gratuit: true,
     url: "https://www.ouest-france.fr/rss-en-continu.xml" },
-  { nom: "ICI Manche",   groupe: "Local",         gratuit: true,  local: true,
-    url: "https://www.francebleu.fr/rss/normandie/manche-50/rss_actualites.xml" },
-  { nom: "Tendance Ouest", groupe: "Local",       gratuit: true,  local: true,
-    url: "https://www.tendanceouest.com/rss/actualites.xml" },
+  { nom: "20 Minutes",   groupe: "20 Minutes",    gratuit: true,
+    url: "https://www.20minutes.fr/feeds/rss-une.xml" },
+  { nom: "La Dépêche",   groupe: "La Dépêche",    gratuit: true,
+    url: "https://www.ladepeche.fr/rss.xml" },
+
+  // Presse avec articles gratuits + dossiers payants
+  { nom: "Le Figaro",    groupe: "Le Figaro",     gratuit: false,
+    url: "https://www.lefigaro.fr/rss/figaro_politique.xml" },
+  { nom: "Libération",   groupe: "Libération",    gratuit: false,
+    url: "https://www.liberation.fr/arc/outboundfeeds/rss-all/category/politique/?outputType=xml" },
 ];
 
-const PROXY = "https://api.rss2json.com/v1/api.json?rss_url=";
+// Proxy principal + de secours
+const PROXIES = [
+  "https://api.rss2json.com/v1/api.json?rss_url=",
+  "https://api.rss2json.com/v1/api.json?count=20&rss_url=",
+];
 
-// Mots-clés politique nationale
+// Sources sans flux politique dédié → filtrage par mots-clés
+const FILTRER = ["Le Parisien","Ouest-France","20 Minutes","HuffPost","La Dépêche","France 24","RFI","Radio France"];
+
 const MOTS_POLITIQUE = [
   "gouvernement","assemblée","sénat","macron","premier ministre",
   "député","ministre","élection","parlement","politique","loi",
   "parti","présidentielle","gauche","droite","vote","réforme",
   "mélenchon","le pen","bardella","weil","barnier","bayrou",
   "lfi","rn","ps","lr","renaissance","nfp","front populaire",
-  "législative","municipale","européenne","budget","constitution"
+  "législative","municipale","budget","constitution","discours",
+  "matignon","élysée","premier ministre"
 ];
 
-// Mots-clés local Avranches
-const MOTS_LOCAL = [
-  "avranches","manche","normandie","avranchin","mont-saint-michel",
-  "granville","saint-lô","cherbourg","municipale","mairie","conseil municipal",
-  "département","région","élu","maire"
+const MOTS_PAYANTS = [
+  "réservé aux abonnés","abonnés","premium","accès restreint","payant"
 ];
 
-// Sources sans flux dédié politique → on filtre
-const FILTRER_POLITIQUE = ["Le Parisien","20 Minutes","HuffPost","La Dépêche","France 24","RFI","Radio France"];
-const FILTRER_LOCAL = ["Ouest-France","ICI Manche","Tendance Ouest"];
-
-// Mots signalant article payant
-const MOTS_PAYANTS = ["réservé aux abonnés","abonnés","premium","accès restreint","payant"];
-
-function estPolitique(texte) {
-  const t = texte.toLowerCase();
+function estPolitique(titre) {
+  const t = titre.toLowerCase();
   return MOTS_POLITIQUE.some(m => t.includes(m));
 }
-function estLocal(texte) {
-  const t = texte.toLowerCase();
-  return MOTS_LOCAL.some(m => t.includes(m));
-}
+
 function estPayant(item) {
   const t = [item.title||"", item.description||"", (item.categories||[]).join(" ")].join(" ").toLowerCase();
   return MOTS_PAYANTS.some(m => t.includes(m));
@@ -328,106 +318,111 @@ function formaterDate(dateStr) {
   if (!dateStr) return "";
   const d = new Date(dateStr);
   if (isNaN(d)) return "";
-  const now = new Date();
-  const diff = Math.floor((now - d) / 60000); // minutes
+  const diff = Math.floor((Date.now() - d) / 60000);
+  if (diff < 1) return "à l'instant";
   if (diff < 60) return `il y a ${diff} min`;
   if (diff < 1440) return `il y a ${Math.floor(diff/60)}h`;
   return d.toLocaleDateString("fr-FR", { day:"numeric", month:"short" });
 }
 
 let tousLesArticles = [];
+let filtreActif = "Tout";
+let premiereCharge = true;
 
 // ================================================================
-// CHARGEMENT
+// CHARGEMENT avec double proxy
 // ================================================================
 async function chargerSource(source) {
-  try {
-    const r = await fetch(PROXY + encodeURIComponent(source.url));
-    if (!r.ok) return [];
-    const data = await r.json();
-    if (!data.items?.length) return [];
+  for (const proxy of PROXIES) {
+    try {
+      // Cache-busting : timestamp dans l'URL pour forcer la fraîcheur
+      const sep = proxy.includes("?") ? "&" : "?";
+      const r = await fetch(proxy + encodeURIComponent(source.url) + sep + "_=" + Date.now());
+      if (!r.ok) continue;
+      const data = await r.json();
+      if (!data.items?.length) continue;
 
-    let items = data.items;
+      let items = data.items;
 
-    // Filtrage selon le type de source
-    if (source.local && FILTRER_LOCAL.includes(source.nom)) {
-      items = items.filter(i => estLocal(i.title || ""));
-    } else if (!source.local && FILTRER_POLITIQUE.includes(source.nom)) {
-      items = items.filter(i => estPolitique(i.title || ""));
+      if (FILTRER.includes(source.nom)) {
+        items = items.filter(i => estPolitique(i.title || ""));
+      }
+
+      // Tri par date décroissante
+      items.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+
+      return items.slice(0, 10).map(i => ({
+        source: source.nom,
+        groupe: source.groupe,
+        gratuit: source.gratuit,
+        payant: !source.gratuit ? estPayant(i) : false,
+        title: i.title || "Sans titre",
+        link: i.link || "#",
+        image: extraireImage(i),
+        date: i.pubDate || "",
+        summary: i.description
+          ? i.description.replace(/<[^>]+>/g, "").slice(0, 160) + "..."
+          : ""
+      }));
+    } catch(e) {
+      console.warn(`Erreur ${source.nom} (proxy ${proxy}):`, e);
     }
-
-    // Tri par date décroissante (plus récent en premier)
-    items.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
-
-    return items.slice(0, 10).map(i => ({
-      source: source.nom,
-      groupe: source.groupe,
-      gratuit: source.gratuit,
-      local: source.local,
-      payant: !source.gratuit ? estPayant(i) : false,
-      title: i.title || "Sans titre",
-      link: i.link || "#",
-      image: extraireImage(i),
-      date: i.pubDate || "",
-      summary: i.description
-        ? i.description.replace(/<[^>]+>/g, "").slice(0, 160) + "..."
-        : ""
-    }));
-  } catch(e) {
-    console.warn(`Erreur ${source.nom}:`, e);
-    return [];
   }
+  return [];
 }
 
 async function loadArticles() {
   const resultats = await Promise.all(SOURCES.map(s => chargerSource(s)));
 
-  // Fusion et déduplication par titre
+  // Fusion + déduplication par titre
   const vus = new Set();
-  tousLesArticles = resultats.flat().filter(a => {
-    const key = a.title.slice(0, 60);
+  const nouveaux = resultats.flat().filter(a => {
+    const key = a.title.slice(0, 60).toLowerCase();
     if (vus.has(key)) return false;
     vus.add(key);
     return true;
   });
 
-  // Tri global par date
-  tousLesArticles.sort((a, b) => new Date(b.date) - new Date(a.date));
+  // Tri global par date (plus récent en premier)
+  nouveaux.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-  if (!tousLesArticles.length) {
+  if (!nouveaux.length && premiereCharge) {
     document.getElementById("message").textContent = "❌ Impossible de charger les articles.";
     return;
   }
 
-  creerBoutonsSources();
-  afficherArticles("Tout");
+  if (nouveaux.length > 0) {
+    tousLesArticles = nouveaux;
+  }
+
+  if (premiereCharge) {
+    creerBoutonsSources();
+    premiereCharge = false;
+  }
+
+  afficherArticles(filtreActif);
+
+  // Affiche l'heure du dernier refresh
+  const now = new Date();
+  document.getElementById("refresh-texte").textContent =
+    `Mis à jour à ${now.getHours()}h${String(now.getMinutes()).padStart(2,"0")}`;
 }
 
 // ================================================================
-// BOUTONS SOURCES (scrollables)
+// BOUTONS SOURCES
 // ================================================================
 function creerBoutonsSources() {
   const liste = document.getElementById("sources-liste");
+  const groupes = ["Tout", ...new Set(tousLesArticles.map(a => a.groupe))];
 
-  // Groupes uniques présents
-  const groupes = ["Tout", "Local 📍", ...new Set(
-    tousLesArticles
-      .filter(a => !a.local)
-      .map(a => a.groupe)
-  ), "Local 📍"];
-
-  // Déduplique "Local 📍"
-  const groupesUniques = [...new Set(["Tout", ...new Set(
-    tousLesArticles.map(a => a.local ? "Local 📍" : a.groupe)
-  )])];
-
-  groupesUniques.forEach(nom => {
+  groupes.forEach(nom => {
     const btn = document.createElement("button");
     btn.className = "source-btn" + (nom === "Tout" ? " actif" : "");
     btn.textContent = nom;
     btn.onclick = () => {
       document.querySelectorAll(".source-btn").forEach(b => b.classList.remove("actif"));
       btn.classList.add("actif");
+      filtreActif = nom;
       afficherArticles(nom);
     };
     liste.appendChild(btn);
@@ -441,14 +436,9 @@ function afficherArticles(filtre) {
   const container = document.getElementById("articles");
   const compteur = document.getElementById("compteur");
 
-  let articles;
-  if (filtre === "Tout") {
-    articles = tousLesArticles;
-  } else if (filtre === "Local 📍") {
-    articles = tousLesArticles.filter(a => a.local);
-  } else {
-    articles = tousLesArticles.filter(a => a.groupe === filtre);
-  }
+  const articles = filtre === "Tout"
+    ? tousLesArticles
+    : tousLesArticles.filter(a => a.groupe === filtre);
 
   if (!articles.length) {
     container.innerHTML = `<p id="message">Aucun article trouvé.</p>`;
@@ -464,7 +454,6 @@ function afficherArticles(filtre) {
     div.className = "card";
 
     const badgePayant = a.payant ? `<span class="badge-payant">🔒 Abonnés</span>` : "";
-    const badgeLocal = a.local ? `<span class="badge-local">📍 Local</span>` : "";
     const imageHtml = a.image
       ? `<img class="card-image" src="${a.image}" alt="" loading="lazy" onerror="this.style.display='none'">`
       : "";
@@ -475,7 +464,7 @@ function afficherArticles(filtre) {
       <div class="card-body">
         <div class="card-meta">
           <span class="source-badge">📰 ${a.source}</span>
-          ${badgeLocal}${badgePayant}
+          ${badgePayant}
           ${dateHtml}
         </div>
         <h3>${a.title}</h3>
@@ -488,514 +477,17 @@ function afficherArticles(filtre) {
 }
 
 // ================================================================
-// BOUTON REMONTER EN HAUT
+// RECHARGEMENT AUTOMATIQUE TOUTES LES 2 MINUTES
 // ================================================================
+loadArticles();
+setInterval(loadArticles, 2 * 60 * 1000);
+
+// Bouton haut
 const btnTop = document.getElementById("btn-top");
 window.addEventListener("scroll", () => {
   btnTop.classList.toggle("visible", window.scrollY > 300);
 });
-
-loadArticles();
 </script>
 
 </body>
-</html><!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Politique française</title>
-
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: Arial, sans-serif;
-      background: #f1f5f9;
-      font-size: 15px;
-    }
-
-    header {
-      background: white;
-      padding: 14px 16px;
-      text-align: center;
-      font-weight: bold;
-      font-size: 18px;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-    }
-
-    /* BARRE DE SOURCES — défilement horizontal au doigt */
-    .sources-wrapper {
-      background: white;
-      border-bottom: 1px solid #e2e8f0;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
-    }
-    .sources-wrapper::-webkit-scrollbar { display: none; }
-
-    .sources-liste {
-      display: flex;
-      gap: 8px;
-      padding: 10px 12px;
-      width: max-content;
-    }
-
-    .source-btn {
-      padding: 6px 14px;
-      border-radius: 20px;
-      border: 2px solid #3b82f6;
-      background: white;
-      color: #3b82f6;
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: bold;
-      white-space: nowrap;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .source-btn.actif {
-      background: #3b82f6;
-      color: white;
-    }
-
-    /* BOUTON RETOUR */
-    .barre-retour {
-      padding: 10px 16px;
-      background: #f1f5f9;
-    }
-    .btn-retour {
-      display: inline-block;
-      padding: 8px 16px;
-      background: #64748b;
-      color: white;
-      text-decoration: none;
-      border-radius: 8px;
-      font-size: 14px;
-    }
-
-    /* ARTICLES */
-    .container {
-      padding: 12px 14px;
-      padding-bottom: 80px;
-    }
-
-    .compteur {
-      text-align: center;
-      color: #94a3b8;
-      font-size: 12px;
-      margin-bottom: 10px;
-    }
-
-    .card {
-      background: white;
-      border-radius: 12px;
-      margin-bottom: 14px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.07);
-      overflow: hidden;
-    }
-
-    .card-image {
-      width: 100%;
-      max-height: 180px;
-      object-fit: cover;
-      display: block;
-    }
-
-    .card-body {
-      padding: 12px;
-    }
-
-    .card-meta {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 5px;
-      flex-wrap: wrap;
-    }
-
-    .source-badge {
-      font-size: 11px;
-      font-weight: bold;
-      color: #64748b;
-      text-transform: uppercase;
-    }
-
-    .badge-payant {
-      font-size: 11px;
-      background: #fef3c7;
-      color: #92400e;
-      border: 1px solid #fcd34d;
-      border-radius: 4px;
-      padding: 1px 6px;
-      font-weight: bold;
-    }
-
-    .badge-local {
-      font-size: 11px;
-      background: #dcfce7;
-      color: #166534;
-      border: 1px solid #86efac;
-      border-radius: 4px;
-      padding: 1px 6px;
-      font-weight: bold;
-    }
-
-    .card-date {
-      font-size: 11px;
-      color: #94a3b8;
-      margin-left: auto;
-    }
-
-    .card h3 {
-      font-size: 15px;
-      line-height: 1.4;
-      margin-bottom: 6px;
-      color: #1e293b;
-    }
-
-    .card p {
-      font-size: 13px;
-      color: #555;
-      line-height: 1.5;
-      margin-bottom: 10px;
-    }
-
-    .btn-lire {
-      display: inline-block;
-      padding: 7px 14px;
-      background: #3b82f6;
-      color: white;
-      text-decoration: none;
-      border-radius: 8px;
-      font-size: 13px;
-    }
-
-    #message {
-      text-align: center;
-      color: #888;
-      padding: 40px 20px;
-      font-size: 15px;
-    }
-
-    /* BOUTON REMONTER EN HAUT */
-    #btn-top {
-      position: fixed;
-      bottom: 20px;
-      right: 16px;
-      width: 46px;
-      height: 46px;
-      background: #3b82f6;
-      color: white;
-      border: none;
-      border-radius: 50%;
-      font-size: 22px;
-      cursor: pointer;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.2);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 200;
-    }
-    #btn-top.visible { display: flex; }
-  </style>
-</head>
-
-<body>
-
-<header>🇫🇷 Politique française</header>
-
-<!-- Bouton retour juste sous le header -->
-<div class="barre-retour">
-  <a href="index.html" class="btn-retour">← Accueil</a>
-</div>
-
-<!-- Barre de sources scrollable au doigt -->
-<div class="sources-wrapper">
-  <div class="sources-liste" id="sources-liste"></div>
-</div>
-
-<div class="container">
-  <div class="compteur" id="compteur"></div>
-  <div id="articles">
-    <p id="message">⏳ Chargement des articles...</p>
-  </div>
-</div>
-
-<!-- Bouton remonter en haut -->
-<button id="btn-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
-
-<script>
-// ================================================================
-// SOURCES RSS — groupées et avec URLs vérifiées
-// ================================================================
-const SOURCES = [
-  // --- Radio France (France Info + France Inter regroupés) ---
-  { nom: "Radio France", groupe: "Radio France", gratuit: true, local: false,
-    url: "https://www.francetvinfo.fr/politique.rss" },
-  { nom: "Radio France", groupe: "Radio France", gratuit: true, local: false,
-    url: "https://www.franceinter.fr/rss" },
-
-  // --- TV / Web ---
-  { nom: "BFM TV",       groupe: "BFM TV",       gratuit: true,  local: false,
-    url: "https://www.bfmtv.com/rss/politique/" },
-  { nom: "AFP",          groupe: "AFP",           gratuit: true,  local: false,
-    url: "https://www.afp.com/fr/actus/afp_actualite/792,31,9,7,33/feed" },
-  { nom: "France 24",    groupe: "France 24",     gratuit: true,  local: false,
-    url: "https://www.france24.com/fr/france/rss" },
-  { nom: "RFI",          groupe: "RFI",           gratuit: true,  local: false,
-    url: "https://www.rfi.fr/fr/france/rss" },
-  { nom: "Public Sénat", groupe: "Public Sénat",  gratuit: true,  local: false,
-    url: "https://www.publicsenat.fr/rss/articles.rss" },
-  { nom: "HuffPost",     groupe: "HuffPost",      gratuit: true,  local: false,
-    url: "https://www.huffingtonpost.fr/feeds/index.xml" },
-
-  // --- Presse nationale ---
-  { nom: "Le Parisien",  groupe: "Le Parisien",   gratuit: true,  local: false,
-    url: "https://feeds.leparisien.fr/leparisien/rss" },
-  { nom: "20 Minutes",   groupe: "20 Minutes",    gratuit: true,  local: false,
-    url: "https://www.20minutes.fr/feeds/rss-une.xml" },
-  { nom: "La Dépêche",   groupe: "La Dépêche",    gratuit: true,  local: false,
-    url: "https://www.ladepeche.fr/rss.xml" },
-  { nom: "Le Figaro",    groupe: "Le Figaro",     gratuit: false, local: false,
-    url: "https://www.lefigaro.fr/rss/figaro_politique.xml" },
-  { nom: "Libération",   groupe: "Libération",    gratuit: false, local: false,
-    url: "https://www.liberation.fr/arc/outboundfeeds/rss-all/category/politique/?outputType=xml" },
-
-  // --- Presse locale (Avranches / Manche) ---
-  { nom: "Ouest-France", groupe: "Local",         gratuit: true,  local: true,
-    url: "https://www.ouest-france.fr/rss-en-continu.xml" },
-  { nom: "ICI Manche",   groupe: "Local",         gratuit: true,  local: true,
-    url: "https://www.francebleu.fr/rss/normandie/manche-50/rss_actualites.xml" },
-  { nom: "Tendance Ouest", groupe: "Local",       gratuit: true,  local: true,
-    url: "https://www.tendanceouest.com/rss/actualites.xml" },
-];
-
-const PROXY = "https://api.rss2json.com/v1/api.json?rss_url=";
-
-// Mots-clés politique nationale
-const MOTS_POLITIQUE = [
-  "gouvernement","assemblée","sénat","macron","premier ministre",
-  "député","ministre","élection","parlement","politique","loi",
-  "parti","présidentielle","gauche","droite","vote","réforme",
-  "mélenchon","le pen","bardella","weil","barnier","bayrou",
-  "lfi","rn","ps","lr","renaissance","nfp","front populaire",
-  "législative","municipale","européenne","budget","constitution"
-];
-
-// Mots-clés local — uniquement Avranches et environs immédiats
-const MOTS_LOCAL = [
-  "avranches","david nicolas","angélique ferreira","agglo mont-saint-michel"
-];
-
-// Sources sans flux dédié politique → on filtre
-const FILTRER_POLITIQUE = ["Le Parisien","20 Minutes","HuffPost","La Dépêche","France 24","RFI","Radio France"];
-const FILTRER_LOCAL = ["Ouest-France","ICI Manche","Tendance Ouest"];
-
-// Mots signalant article payant
-const MOTS_PAYANTS = ["réservé aux abonnés","abonnés","premium","accès restreint","payant"];
-
-function estPolitique(texte) {
-  const t = texte.toLowerCase();
-  return MOTS_POLITIQUE.some(m => t.includes(m));
-}
-function estLocal(texte) {
-  const t = texte.toLowerCase();
-  return MOTS_LOCAL.some(m => t.includes(m));
-}
-function estPayant(item) {
-  const t = [item.title||"", item.description||"", (item.categories||[]).join(" ")].join(" ").toLowerCase();
-  return MOTS_PAYANTS.some(m => t.includes(m));
-}
-
-function extraireImage(item) {
-  if (item.thumbnail?.startsWith("http")) return item.thumbnail;
-  if (item.enclosure?.link && item.enclosure?.type?.startsWith("image")) return item.enclosure.link;
-  for (const champ of [item.content, item.description]) {
-    if (!champ) continue;
-    const m1 = champ.match(/url="(https?:\/\/[^"]+\.(jpg|jpeg|png|webp)[^"]*)"/i);
-    if (m1) return m1[1];
-    const m2 = champ.match(/<img[^>]+src="(https?:\/\/[^"]+)"/i);
-    if (m2) return m2[1];
-  }
-  return null;
-}
-
-function formaterDate(dateStr) {
-  if (!dateStr) return "";
-  const d = new Date(dateStr);
-  if (isNaN(d)) return "";
-  const now = new Date();
-  const diff = Math.floor((now - d) / 60000); // minutes
-  if (diff < 60) return `il y a ${diff} min`;
-  if (diff < 1440) return `il y a ${Math.floor(diff/60)}h`;
-  return d.toLocaleDateString("fr-FR", { day:"numeric", month:"short" });
-}
-
-let tousLesArticles = [];
-
-// ================================================================
-// CHARGEMENT
-// ================================================================
-async function chargerSource(source) {
-  try {
-    const r = await fetch(PROXY + encodeURIComponent(source.url));
-    if (!r.ok) return [];
-    const data = await r.json();
-    if (!data.items?.length) return [];
-
-    let items = data.items;
-
-    // Filtrage selon le type de source
-    if (source.local && FILTRER_LOCAL.includes(source.nom)) {
-      items = items.filter(i => estLocal(i.title || ""));
-    } else if (!source.local && FILTRER_POLITIQUE.includes(source.nom)) {
-      items = items.filter(i => estPolitique(i.title || ""));
-    }
-
-    // Tri par date décroissante (plus récent en premier)
-    items.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
-
-    return items.slice(0, 10).map(i => ({
-      source: source.nom,
-      groupe: source.groupe,
-      gratuit: source.gratuit,
-      local: source.local,
-      payant: !source.gratuit ? estPayant(i) : false,
-      title: i.title || "Sans titre",
-      link: i.link || "#",
-      image: extraireImage(i),
-      date: i.pubDate || "",
-      summary: i.description
-        ? i.description.replace(/<[^>]+>/g, "").slice(0, 160) + "..."
-        : ""
-    }));
-  } catch(e) {
-    console.warn(`Erreur ${source.nom}:`, e);
-    return [];
-  }
-}
-
-async function loadArticles() {
-  const resultats = await Promise.all(SOURCES.map(s => chargerSource(s)));
-
-  // Fusion et déduplication par titre
-  const vus = new Set();
-  tousLesArticles = resultats.flat().filter(a => {
-    const key = a.title.slice(0, 60);
-    if (vus.has(key)) return false;
-    vus.add(key);
-    return true;
-  });
-
-  // Tri global par date
-  tousLesArticles.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-  if (!tousLesArticles.length) {
-    document.getElementById("message").textContent = "❌ Impossible de charger les articles.";
-    return;
-  }
-
-  creerBoutonsSources();
-  afficherArticles("Tout");
-}
-
-// ================================================================
-// BOUTONS SOURCES (scrollables)
-// ================================================================
-function creerBoutonsSources() {
-  const liste = document.getElementById("sources-liste");
-
-  // Groupes uniques présents
-  const groupes = ["Tout", "Local 📍", ...new Set(
-    tousLesArticles
-      .filter(a => !a.local)
-      .map(a => a.groupe)
-  ), "Local 📍"];
-
-  // Déduplique "Local 📍"
-  const groupesUniques = [...new Set(["Tout", ...new Set(
-    tousLesArticles.map(a => a.local ? "Local 📍" : a.groupe)
-  )])];
-
-  groupesUniques.forEach(nom => {
-    const btn = document.createElement("button");
-    btn.className = "source-btn" + (nom === "Tout" ? " actif" : "");
-    btn.textContent = nom;
-    btn.onclick = () => {
-      document.querySelectorAll(".source-btn").forEach(b => b.classList.remove("actif"));
-      btn.classList.add("actif");
-      afficherArticles(nom);
-    };
-    liste.appendChild(btn);
-  });
-}
-
-// ================================================================
-// AFFICHAGE
-// ================================================================
-function afficherArticles(filtre) {
-  const container = document.getElementById("articles");
-  const compteur = document.getElementById("compteur");
-
-  let articles;
-  if (filtre === "Tout") {
-    articles = tousLesArticles;
-  } else if (filtre === "Local 📍") {
-    articles = tousLesArticles.filter(a => a.local);
-  } else {
-    articles = tousLesArticles.filter(a => a.groupe === filtre);
-  }
-
-  if (!articles.length) {
-    container.innerHTML = `<p id="message">Aucun article trouvé.</p>`;
-    compteur.textContent = "";
-    return;
-  }
-
-  compteur.textContent = `${articles.length} article${articles.length > 1 ? "s" : ""}`;
-  container.innerHTML = "";
-
-  articles.forEach(a => {
-    const div = document.createElement("div");
-    div.className = "card";
-
-    const badgePayant = a.payant ? `<span class="badge-payant">🔒 Abonnés</span>` : "";
-    const badgeLocal = a.local ? `<span class="badge-local">📍 Local</span>` : "";
-    const imageHtml = a.image
-      ? `<img class="card-image" src="${a.image}" alt="" loading="lazy" onerror="this.style.display='none'">`
-      : "";
-    const dateHtml = a.date ? `<span class="card-date">${formaterDate(a.date)}</span>` : "";
-
-    div.innerHTML = `
-      ${imageHtml}
-      <div class="card-body">
-        <div class="card-meta">
-          <span class="source-badge">📰 ${a.source}</span>
-          ${badgeLocal}${badgePayant}
-          ${dateHtml}
-        </div>
-        <h3>${a.title}</h3>
-        ${a.summary ? `<p>${a.summary}</p>` : ""}
-        <a href="${a.link}" target="_blank" class="btn-lire">Lire l'article</a>
-      </div>
-    `;
-    container.appendChild(div);
-  });
-}
-
-// ================================================================
-// BOUTON REMONTER EN HAUT
-// ================================================================
-const btnTop = document.getElementById("btn-top");
-window.addEventListener("scroll", () => {
-  btnTop.classList.toggle("visible", window.scrollY > 300);
-});
-
-loadArticles();
-</script>
-
-</body>
-  </html>
+</html>
