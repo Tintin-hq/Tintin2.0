@@ -23,10 +23,6 @@
       top: 0;
       z-index: 100;
       box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
     }
 
     .barre-retour {
@@ -43,7 +39,6 @@
       font-size: 14px;
     }
 
-    /* Barre sources scrollable */
     .sources-wrapper {
       background: white;
       border-bottom: 1px solid #e2e8f0;
@@ -75,7 +70,6 @@
       color: white;
     }
 
-    /* Compteur + indicateur refresh */
     .barre-info {
       display: flex;
       justify-content: space-between;
@@ -90,15 +84,13 @@
       gap: 4px;
     }
     .dot {
-      width: 7px;
-      height: 7px;
+      width: 7px; height: 7px;
       background: #22c55e;
       border-radius: 50%;
       animation: pulse 2s infinite;
     }
     @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.3; }
+      0%,100% { opacity:1; } 50% { opacity:0.3; }
     }
 
     .container {
@@ -106,7 +98,36 @@
       padding-bottom: 80px;
     }
 
-    /* Carte article */
+    /* Section analystes */
+    .section-analystes {
+      margin-bottom: 18px;
+    }
+    .section-titre {
+      font-size: 13px;
+      font-weight: bold;
+      color: #64748b;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      letter-spacing: 0.5px;
+    }
+    .analystes-liste {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .analyste-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 12px;
+      background: #1da1f2;
+      color: white;
+      border-radius: 20px;
+      font-size: 13px;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
     .card {
       background: white;
       border-radius: 12px;
@@ -176,13 +197,11 @@
       padding: 40px 20px;
     }
 
-    /* Bouton haut */
     #btn-top {
       position: fixed;
       bottom: 20px;
       right: 16px;
-      width: 46px;
-      height: 46px;
+      width: 46px; height: 46px;
       background: #3b82f6;
       color: white;
       border: none;
@@ -219,6 +238,13 @@
 </div>
 
 <div class="container">
+
+  <!-- Section analystes politiques -->
+  <div class="section-analystes" id="section-analystes" style="display:none">
+    <div class="section-titre">🎙️ Analystes politiques — sur X/Twitter</div>
+    <div class="analystes-liste" id="analystes-liste"></div>
+  </div>
+
   <div id="articles">
     <p id="message">⏳ Chargement des articles...</p>
   </div>
@@ -228,16 +254,13 @@
 
 <script>
 // ================================================================
-// SOURCES — URLs toutes vérifiées
+// SOURCES RSS — toutes vérifiées
 // ================================================================
 const SOURCES = [
-  // Radio France (France Info + France Inter → groupe "Radio France")
   { nom: "Radio France", groupe: "Radio France", gratuit: true,
     url: "https://www.francetvinfo.fr/politique.rss" },
   { nom: "Radio France", groupe: "Radio France", gratuit: true,
     url: "https://www.franceinter.fr/rss" },
-
-  // TV & Web
   { nom: "BFM TV",       groupe: "BFM TV",       gratuit: true,
     url: "https://www.bfmtv.com/rss/politique/" },
   { nom: "AFP",          groupe: "AFP",           gratuit: true,
@@ -246,12 +269,14 @@ const SOURCES = [
     url: "https://www.france24.com/fr/france/rss" },
   { nom: "RFI",          groupe: "RFI",           gratuit: true,
     url: "https://www.rfi.fr/fr/france/rss" },
-  { nom: "Public Sénat", groupe: "Public Sénat",  gratuit: true,
-    url: "https://www.publicsenat.fr/rss/politique.rss" },
+  // Vie-publique remplace Public Sénat (RSS vérifié et actif)
+  { nom: "Vie Publique",  groupe: "Vie Publique", gratuit: true,
+    url: "https://www.vie-publique.fr/rss/actualites.xml" },
+  // LCP remplace comme source parlementaire (RSS via leur flux WordPress)
+  { nom: "LCP",          groupe: "LCP",           gratuit: true,
+    url: "https://lcp.fr/feed" },
   { nom: "HuffPost",     groupe: "HuffPost",      gratuit: true,
     url: "https://www.huffingtonpost.fr/feeds/index.xml" },
-
-  // Presse nationale
   { nom: "Le Parisien",  groupe: "Le Parisien",   gratuit: true,
     url: "https://feeds.leparisien.fr/leparisien/rss" },
   { nom: "Ouest-France", groupe: "Ouest-France",  gratuit: true,
@@ -260,41 +285,89 @@ const SOURCES = [
     url: "https://www.20minutes.fr/feeds/rss-une.xml" },
   { nom: "La Dépêche",   groupe: "La Dépêche",    gratuit: true,
     url: "https://www.ladepeche.fr/rss.xml" },
-
-  // Presse avec articles gratuits + dossiers payants
   { nom: "Le Figaro",    groupe: "Le Figaro",     gratuit: false,
     url: "https://www.lefigaro.fr/rss/figaro_politique.xml" },
   { nom: "Libération",   groupe: "Libération",    gratuit: false,
     url: "https://www.liberation.fr/arc/outboundfeeds/rss-all/category/politique/?outputType=xml" },
 ];
 
-// Proxy principal + de secours
-const PROXIES = [
-  "https://api.rss2json.com/v1/api.json?rss_url=",
-  "https://api.rss2json.com/v1/api.json?count=20&rss_url=",
+// ================================================================
+// ANALYSTES POLITIQUES — liens X/Twitter directs
+// (RSS Twitter non disponible gratuitement depuis 2023)
+// ================================================================
+const ANALYSTES = [
+  { nom: "Renaud Pila",        handle: "RenaudPila" },
+  { nom: "Jérôme Sainte-Marie",handle: "JeromeSM_poly" },
+  { nom: "Chloé Morin",        handle: "chloe_morin_" },
+  { nom: "Frédéric Dabi",      handle: "FredericDabi" },
+  { nom: "Bruno Cautrès",      handle: "BrunoCautres" },
+  { nom: "Thomas Guénolé",     handle: "ThomasGuenole" },
+  { nom: "Luc Rouban",         handle: "LucRouban" },
 ];
+
+const PROXY = "https://api.rss2json.com/v1/api.json?count=20&rss_url=";
 
 // Sources sans flux politique dédié → filtrage par mots-clés
-const FILTRER = ["Le Parisien","Ouest-France","20 Minutes","HuffPost","La Dépêche","France 24","RFI","Radio France"];
-
-const MOTS_POLITIQUE = [
-  "gouvernement","assemblée","sénat","macron","premier ministre",
-  "député","ministre","élection","parlement","politique","loi",
-  "parti","présidentielle","gauche","droite","vote","réforme",
-  "mélenchon","le pen","bardella","weil","barnier","bayrou",
-  "lfi","rn","ps","lr","renaissance","nfp","front populaire",
-  "législative","municipale","budget","constitution","discours",
-  "matignon","élysée","premier ministre"
+const FILTRER = [
+  "Le Parisien","Ouest-France","20 Minutes","HuffPost",
+  "La Dépêche","France 24","RFI","Radio France","LCP","Vie Publique"
 ];
 
-const MOTS_PAYANTS = [
-  "réservé aux abonnés","abonnés","premium","accès restreint","payant"
+// ================================================================
+// MOTS-CLÉS : ce qu'on VEUT (politique nationale française)
+// ================================================================
+const MOTS_OK = [
+  // Institutions
+  "gouvernement","assemblée nationale","sénat","parlement","matignon","élysée",
+  "conseil des ministres","premier ministre","président de la république",
+  "ministre","secrétaire d'état","conseil constitutionnel",
+  // Acteurs politiques
+  "macron","bayrou","barnier","weil","lecornu","retailleau","castets",
+  "mélenchon","le pen","bardella","glucksmann","faure","ciotti","wauquiez",
+  // Partis & coalitions
+  "lfi","rn","ps","lr","renaissance","nfp","nouveau front populaire",
+  "rassemblement national","la france insoumise","parti socialiste",
+  "les républicains","horizons","modem",
+  // Actes politiques
+  "élection","vote","loi","réforme","budget","motion de censure",
+  "49-3","49.3","dissolution","cohabitation","sondage","présidentielle",
+  "législative","sénatoriale","programme politique","discours politique",
+  "commission d'enquête","audition parlementaire",
+  // Politique locale à enjeu national
+  "maire de paris","marie anne",
 ];
 
-function estPolitique(titre) {
+// ================================================================
+// MOTS-CLÉS : ce qu'on REFUSE (hors-sujet)
+// ================================================================
+const MOTS_NON = [
+  // International pur
+  "ukraine","russie","gaza","israël","iran","états-unis","trump","chine",
+  "otan","ue ","union européenne","bruxelles","macron à",
+  // Faits divers / société
+  "accident","incendie","meurtre","crime","procès","tribunal","justice","viol",
+  "fait divers","catastrophe","séisme","inondation","météo","tempête",
+  // Sport & culture
+  "football","ligue 1","psg","om","coupe de france","roland garros","jeux olympiques",
+  "cinéma","musique","concert","série tv","film","festival",
+  // Religion & fêtes
+  "pâques","noël","ramadan","pape","vatican","léon xiv","église",
+  // Économie sans lien politique
+  "bourse","cac 40","action","immobilier","taux","inflation","prêt",
+  // Divers hors-sujet
+  "recette","cuisine","mode","beauté","tourisme","voyage","animaux",
+  "chasse aux œufs","carnaval","saint-valentin",
+];
+
+function estPertinent(titre) {
   const t = titre.toLowerCase();
-  return MOTS_POLITIQUE.some(m => t.includes(m));
+  // Refus strict si hors-sujet
+  if (MOTS_NON.some(m => t.includes(m))) return false;
+  // Accepté si mot politique trouvé
+  return MOTS_OK.some(m => t.includes(m));
 }
+
+const MOTS_PAYANTS = ["réservé aux abonnés","abonnés","premium","accès restreint"];
 
 function estPayant(item) {
   const t = [item.title||"", item.description||"", (item.categories||[]).join(" ")].join(" ").toLowerCase();
@@ -329,52 +402,50 @@ let tousLesArticles = [];
 let filtreActif = "Tout";
 let premiereCharge = true;
 
-// ================================================================
-// CHARGEMENT avec double proxy
-// ================================================================
 async function chargerSource(source) {
-  for (const proxy of PROXIES) {
-    try {
-      // Cache-busting : timestamp dans l'URL pour forcer la fraîcheur
-      const sep = proxy.includes("?") ? "&" : "?";
-      const r = await fetch(proxy + encodeURIComponent(source.url) + sep + "_=" + Date.now());
-      if (!r.ok) continue;
-      const data = await r.json();
-      if (!data.items?.length) continue;
+  try {
+    const r = await fetch(PROXY + encodeURIComponent(source.url) + "&_=" + Date.now());
+    if (!r.ok) return [];
+    const data = await r.json();
+    if (!data.items?.length) return [];
 
-      let items = data.items;
+    let items = data.items;
 
-      if (FILTRER.includes(source.nom)) {
-        items = items.filter(i => estPolitique(i.title || ""));
-      }
-
-      // Tri par date décroissante
-      items.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
-
-      return items.slice(0, 10).map(i => ({
-        source: source.nom,
-        groupe: source.groupe,
-        gratuit: source.gratuit,
-        payant: !source.gratuit ? estPayant(i) : false,
-        title: i.title || "Sans titre",
-        link: i.link || "#",
-        image: extraireImage(i),
-        date: i.pubDate || "",
-        summary: i.description
-          ? i.description.replace(/<[^>]+>/g, "").slice(0, 160) + "..."
-          : ""
-      }));
-    } catch(e) {
-      console.warn(`Erreur ${source.nom} (proxy ${proxy}):`, e);
+    // Filtrage politique pour les sources généralistes
+    if (FILTRER.includes(source.nom)) {
+      items = items.filter(i => estPertinent(i.title || ""));
+    } else {
+      // Même pour les sources dédiées politique, on retire les hors-sujet
+      items = items.filter(i => {
+        const t = (i.title || "").toLowerCase();
+        return !MOTS_NON.some(m => t.includes(m));
+      });
     }
+
+    items.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+
+    return items.slice(0, 10).map(i => ({
+      source: source.nom,
+      groupe: source.groupe,
+      gratuit: source.gratuit,
+      payant: !source.gratuit ? estPayant(i) : false,
+      title: i.title || "Sans titre",
+      link: i.link || "#",
+      image: extraireImage(i),
+      date: i.pubDate || "",
+      summary: i.description
+        ? i.description.replace(/<[^>]+>/g, "").slice(0, 160) + "..."
+        : ""
+    }));
+  } catch(e) {
+    console.warn(`Erreur ${source.nom}:`, e);
+    return [];
   }
-  return [];
 }
 
 async function loadArticles() {
   const resultats = await Promise.all(SOURCES.map(s => chargerSource(s)));
 
-  // Fusion + déduplication par titre
   const vus = new Set();
   const nouveaux = resultats.flat().filter(a => {
     const key = a.title.slice(0, 60).toLowerCase();
@@ -383,38 +454,30 @@ async function loadArticles() {
     return true;
   });
 
-  // Tri global par date (plus récent en premier)
   nouveaux.sort((a, b) => new Date(b.date) - new Date(a.date));
 
   if (!nouveaux.length && premiereCharge) {
     document.getElementById("message").textContent = "❌ Impossible de charger les articles.";
     return;
   }
-
-  if (nouveaux.length > 0) {
-    tousLesArticles = nouveaux;
-  }
+  if (nouveaux.length > 0) tousLesArticles = nouveaux;
 
   if (premiereCharge) {
     creerBoutonsSources();
+    afficherAnalystes();
     premiereCharge = false;
   }
 
   afficherArticles(filtreActif);
 
-  // Affiche l'heure du dernier refresh
   const now = new Date();
   document.getElementById("refresh-texte").textContent =
     `Mis à jour à ${now.getHours()}h${String(now.getMinutes()).padStart(2,"0")}`;
 }
 
-// ================================================================
-// BOUTONS SOURCES
-// ================================================================
 function creerBoutonsSources() {
   const liste = document.getElementById("sources-liste");
   const groupes = ["Tout", ...new Set(tousLesArticles.map(a => a.groupe))];
-
   groupes.forEach(nom => {
     const btn = document.createElement("button");
     btn.className = "source-btn" + (nom === "Tout" ? " actif" : "");
@@ -429,9 +492,20 @@ function creerBoutonsSources() {
   });
 }
 
-// ================================================================
-// AFFICHAGE
-// ================================================================
+function afficherAnalystes() {
+  const section = document.getElementById("section-analystes");
+  const liste = document.getElementById("analystes-liste");
+  section.style.display = "block";
+  ANALYSTES.forEach(a => {
+    const lien = document.createElement("a");
+    lien.className = "analyste-btn";
+    lien.href = `https://x.com/${a.handle}`;
+    lien.target = "_blank";
+    lien.innerHTML = `𝕏 ${a.nom}`;
+    liste.appendChild(lien);
+  });
+}
+
 function afficherArticles(filtre) {
   const container = document.getElementById("articles");
   const compteur = document.getElementById("compteur");
@@ -452,13 +526,11 @@ function afficherArticles(filtre) {
   articles.forEach(a => {
     const div = document.createElement("div");
     div.className = "card";
-
     const badgePayant = a.payant ? `<span class="badge-payant">🔒 Abonnés</span>` : "";
     const imageHtml = a.image
       ? `<img class="card-image" src="${a.image}" alt="" loading="lazy" onerror="this.style.display='none'">`
       : "";
     const dateHtml = a.date ? `<span class="card-date">${formaterDate(a.date)}</span>` : "";
-
     div.innerHTML = `
       ${imageHtml}
       <div class="card-body">
@@ -476,9 +548,7 @@ function afficherArticles(filtre) {
   });
 }
 
-// ================================================================
-// RECHARGEMENT AUTOMATIQUE TOUTES LES 2 MINUTES
-// ================================================================
+// Rechargement toutes les 2 minutes
 loadArticles();
 setInterval(loadArticles, 2 * 60 * 1000);
 
